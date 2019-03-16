@@ -2,8 +2,6 @@ from urllib.parse import urlsplit, parse_qs, parse_qsl, urlencode, urlunsplit
 import hashlib
 import os
 
-url = 'http://someserver.com/?B02K_VERS=0003&B02K_TIMESTMP=50020181017141433899056&B02K_IDNBR=2512408990&B02K_STAMP=20010125140015123456&B02K_CUSTNAME=FIRST%20LAST&B02K_KEYVERS=0001&B02K_ALG=03&B02K_CUSTID=9984&B02K_CUSTTYPE=02&B02K_MAC=EBA959A76B87AE8996849E7C0C08D4AC44B053183BE12C0DAC2AD0C86F9F2542'
-
 
 def _validateUrl(queryObj):
     queriesConcat = ""
@@ -19,7 +17,7 @@ def _validateUrl(queryObj):
     return False
 
 
-def _processSignedURL(splitResult, customerName):
+def _processSignedURL(splittedURL, customerName, outputSecret):
     nameArray = customerName.lower().split(" ")
 
     queryObj = {
@@ -27,12 +25,13 @@ def _processSignedURL(splitResult, customerName):
         "lastname": nameArray[-1].capitalize()
     }
 
-    toBeHashed = urlencode(queryObj) + "#" + os.environ["OUTPUT_SECRET"]
+    toBeHashed = urlencode(queryObj) + "#" + outputSecret
     queryObj["hash"] = hashlib.sha256(
         toBeHashed.encode('utf-8')).hexdigest()
 
-    signedURL = urlunsplit((splitResult.scheme, splitResult.netloc,
-                            splitResult.path, urlencode(queryObj), ""))
+    signedURL = urlunsplit((splittedURL.scheme, splittedURL.netloc,
+                            splittedURL.path, urlencode(queryObj), ""))
+
     return signedURL
 
 
@@ -43,14 +42,11 @@ def sign(url):
     if "OUTPUT_SECRET" not in os.environ:
         raise ValueError("Environment variable OUTPUT_SECRET not found")
 
-    splitResult = urlsplit(url)
-    queryObj = dict(parse_qsl(splitResult.query))
+    splittedURL = urlsplit(url)
+    queryObj = dict(parse_qsl(splittedURL.query))
     queryObj["input_secret"] = os.environ["INPUT_SECRET"]
 
     if not _validateUrl(queryObj):
         return "Invalid url"
 
-    return _processSignedURL(splitResult, queryObj["B02K_CUSTNAME"])
-
-
-print(sign(url))
+    return _processSignedURL(splittedURL, queryObj["B02K_CUSTNAME"], os.environ["OUTPUT_SECRET"])
