@@ -4,6 +4,15 @@ from urllib.parse import SplitResult
 from unittest.mock import patch
 import os
 
+urlBase = "https://fsecure.com/?"
+
+
+class IntegrationTest(unittest.TestCase):
+    def test_integration_sign_url(self):
+        result = signer.sign(urlBase + "B02K_CUSTNAME=V%C4IN%D6%20M%C4KI&B02K_MAC=ebfa16b7dbbf887fd579099d5bbac83488fb34f6c824cc0f8d9d6e2f4d286d41")
+        self.assertEqual(
+            result, urlBase + "firstname=V%C3%A4in%C3%B6&lastname=M%C3%A4ki&hash=6e6f22ec29ed8ec1f0be289a94dde36632720596499993b2cdfc1422b834934a")
+
 
 class TestValidateURL(unittest.TestCase):
     def test_validation_succeed(self):
@@ -68,36 +77,67 @@ class TestSignURL(unittest.TestCase):
         """Should output URL correctly"""
         # Setup
         _validateSignature.return_value = True
-        _processSignedURL.return_value = "https://fsecure.com/firstname=Dean&lastname=Le&hash=abc123"
+        _processSignedURL.return_value = urlBase + "firstname=Dean&lastname=Le&hash=abc123"
 
         # Call function
-        result = signer.sign("https://fsecure.com/?B02K_CUSTNAME=DEAN%20LE")
+        result = signer.sign(urlBase + "B02K_CUSTNAME=DEAN%20LE&B02K_MAC=xyz")
 
         # Asertion
         self.assertEqual(
-            result, "https://fsecure.com/firstname=Dean&lastname=Le&hash=abc123")
+            result, urlBase + "firstname=Dean&lastname=Le&hash=abc123")
 
         args, _ = _validateSignature.call_args
 
         self.assertEqual(
-            args[0], {"B02K_CUSTNAME": "DEAN LE", "input_secret": "inputsecret"})
+            args[0], {"B02K_CUSTNAME": "DEAN LE", "B02K_MAC": "xyz", "input_secret": "inputsecret"})
 
         args, _ = _processSignedURL.call_args
         self.assertEqual(args[0], SplitResult(
-            "https", "fsecure.com", "/", "B02K_CUSTNAME=DEAN%20LE", ""))
+            "https", "fsecure.com", "/", "B02K_CUSTNAME=DEAN%20LE&B02K_MAC=xyz", ""))
         self.assertEqual(args[1], "DEAN LE")
         self.assertEqual(args[2], "outputsecret")
+
+    def test_sign_url_successfully_nonAscii_custname(self, _processSignedURL, _validateSignature):
+        """Should output URL correctly even with non-ascii customer name"""
+        # Setup
+        _validateSignature.return_value = True
+        _processSignedURL.return_value = urlBase + "firstname=V%C3%A4in%C3%B6&lastname=M%C3%A4ki&hash=abc123"
+
+        # Call function
+        result = signer.sign(urlBase + "B02K_CUSTNAME=V%C4IN%D6%20M%C4KI&B02K_MAC=xyz")
+
+        # Asertion
+        self.assertEqual(
+            result, urlBase + "firstname=V%C3%A4in%C3%B6&lastname=M%C3%A4ki&hash=abc123")
+
+        args, _ = _validateSignature.call_args
+
+        self.assertEqual(
+            args[0], {"B02K_CUSTNAME": "VÄINÖ MÄKI", "B02K_MAC": "xyz", "input_secret": "inputsecret"})
+
+        args, _ = _processSignedURL.call_args
+        self.assertEqual(args[0], SplitResult(
+            "https", "fsecure.com", "/", "B02K_CUSTNAME=V%C4IN%D6%20M%C4KI&B02K_MAC=xyz", ""))
+        self.assertEqual(args[1], "VÄINÖ MÄKI")
+        self.assertEqual(args[2], "outputsecret")
+
+    def test_signature_missing(self, _processSignedURL, _validateSignature):
+        """Should return 'Signature is missing' if cannot there is no signature"""
+        result = signer.sign(urlBase + "B02K_CUSTNAME=DEAN%20LE")
+        self.assertEqual(result, "Signature is missing")
+        self.assertFalse(_validateSignature.called)
+        self.assertFalse(_processSignedURL.called)
 
     def test_sign_url_invalid_url(self, _processSignedURL, _validateSignature):
         """Should return 'Invalid URL' if cannot validate"""
         _validateSignature.return_value = False
 
-        result = signer.sign("https://fsecure.com/?B02K_CUSTNAME=DEAN%20LE")
+        result = signer.sign(urlBase + "B02K_CUSTNAME=DEAN%20LE&B02K_MAC=xyz")
 
         self.assertEqual(result, "Invalid URL")
         args, _ = _validateSignature.call_args
         self.assertEqual(
-            args[0], {"B02K_CUSTNAME": "DEAN LE", "input_secret": "inputsecret"})
+            args[0], {"B02K_CUSTNAME": "DEAN LE", "B02K_MAC": "xyz", "input_secret": "inputsecret"})
 
         self.assertFalse(_processSignedURL.called)
 

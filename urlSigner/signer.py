@@ -35,7 +35,7 @@ def _processSignedURL(splittedURL, customerName, outputSecret):
     return signedURL
 
 
-def sign(url):
+def sign(url, encoding="cp1252"):
     if "INPUT_SECRET" not in os.environ:
         return "Environment variable INPUT_SECRET not found"
 
@@ -43,7 +43,11 @@ def sign(url):
         return "Environment variable OUTPUT_SECRET not found"
 
     splittedURL = urlsplit(url)
-    queryObj = dict(parse_qsl(splittedURL.query))
+    queryObj = dict(parse_qsl(splittedURL.query, encoding=encoding))
+
+    if "B02K_MAC" not in queryObj:
+        return "Signature is missing"
+
     queryObj["input_secret"] = os.environ["INPUT_SECRET"]
 
     if not _validateSignature(queryObj):
