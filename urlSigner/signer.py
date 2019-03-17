@@ -3,7 +3,7 @@ import hashlib
 import os
 
 
-def _validateUrl(queryObj):
+def _validateSignature(queryObj):
     queriesConcat = ""
     for key, value in queryObj.items():
         if key != "B02K_MAC":
@@ -37,16 +37,16 @@ def _processSignedURL(splittedURL, customerName, outputSecret):
 
 def sign(url):
     if "INPUT_SECRET" not in os.environ:
-        raise ValueError("Environment variable INPUT_SECRET not found")
+        return "Environment variable INPUT_SECRET not found"
 
     if "OUTPUT_SECRET" not in os.environ:
-        raise ValueError("Environment variable OUTPUT_SECRET not found")
+        return "Environment variable OUTPUT_SECRET not found"
 
     splittedURL = urlsplit(url)
     queryObj = dict(parse_qsl(splittedURL.query))
     queryObj["input_secret"] = os.environ["INPUT_SECRET"]
 
-    if not _validateUrl(queryObj):
-        return "Invalid url"
+    if not _validateSignature(queryObj):
+        return "Invalid URL"
 
     return _processSignedURL(splittedURL, queryObj["B02K_CUSTNAME"], os.environ["OUTPUT_SECRET"])
