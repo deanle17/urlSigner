@@ -1,0 +1,9 @@
+README.md
+setup.py
+urlSigner/__init__.py
+urlSigner/signer.py
+urlSigner/signer_test.py
+urlSigner.egg-info/PKG-INFO
+urlSigner.egg-info/SOURCES.txt
+urlSigner.egg-info/dependency_links.txt
+urlSigner.egg-info/top_level.txt

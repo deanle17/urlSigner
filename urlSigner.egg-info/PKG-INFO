@@ -1,0 +1,11 @@
+Metadata-Version: 1.0
+Name: urlSigner
+Version: 0.0.1
+Summary: Library to sign a URL
+Home-page: https://github.com/deanle17/fsecure-assignment
+Author: deanle17
+Author-email: lecungdinh@gmail.com
+License: MIT
+Description: UNKNOWN
+Keywords: url,signer
+Platform: UNKNOWN
