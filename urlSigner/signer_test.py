@@ -9,8 +9,8 @@ urlBase = "https://fsecure.com/?"
 
 class IntegrationTest(unittest.TestCase):
     def test_integration_sign_url(self):
-        os.environ["INPUT_SECRET"] = "inputsecret"
-        os.environ["OUTPUT_SECRET"] = "outputsecret"
+        os.environ[signer.INPUT_SECRET] = "inputsecret"
+        os.environ[signer.OUTPUT_SECRET] = "outputsecret"
 
         result = signer.sign(urlBase + "B02K_CUSTNAME=V%C4IN%D6%20M%C4KI&B02K_MAC=ebfa16b7dbbf887fd579099d5bbac83488fb34f6c824cc0f8d9d6e2f4d286d41")
 
@@ -70,12 +70,12 @@ class TestProcessSignedURL(unittest.TestCase):
 @patch('signer._process_signed_url')
 class TestSignURL(unittest.TestCase):
     def setUp(self):
-        os.environ["INPUT_SECRET"] = "inputsecret"
-        os.environ["OUTPUT_SECRET"] = "outputsecret"
+        os.environ[signer.INPUT_SECRET] = "inputsecret"
+        os.environ[signer.OUTPUT_SECRET] = "outputsecret"
 
     def tearDown(self):
-        del os.environ["INPUT_SECRET"]
-        del os.environ["OUTPUT_SECRET"]
+        del os.environ[signer.INPUT_SECRET]
+        del os.environ[signer.OUTPUT_SECRET]
 
     def test_sign_url_successfully(self, _process_signed_url, _validate_signature):
         """Should output URL correctly"""
