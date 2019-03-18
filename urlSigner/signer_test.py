@@ -127,7 +127,7 @@ class TestSignURL(unittest.TestCase):
         self.assertEqual(args[2], "outputsecret")
 
     def test_signature_missing(self, _process_signed_url, _validate_signature):
-        """Should return 'Signature is missing' if cannot there is no signature"""
+        """Should return 'Signature is missing' if there is no signature"""
         result = signer.sign(urlBase + "B02K_CUSTNAME=DEAN%20LE")
         self.assertEqual(result, "Signature is missing")
         self.assertFalse(_validate_signature.called)

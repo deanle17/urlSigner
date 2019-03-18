@@ -11,26 +11,23 @@ def _validate_signature(queryObj):
 
     signature = hashlib.sha256(queriesConcat.encode('utf-8')).hexdigest()
 
-    if signature == queryObj.get("B02K_MAC").lower():
-        return True
-
-    return False
+    return signature == queryObj.get("B02K_MAC").lower()
 
 
 def _process_signed_url(splittedURL, customerName, outputSecret):
     nameArray = customerName.lower().split(" ")
 
-    queryObj = {
+    newQueryObj = {
         "firstname": nameArray[0].capitalize(),
         "lastname": nameArray[-1].capitalize()
     }
 
-    toBeHashed = urlencode(queryObj) + "#" + outputSecret
-    queryObj["hash"] = hashlib.sha256(
+    toBeHashed = urlencode(newQueryObj) + "#" + outputSecret
+    newQueryObj["hash"] = hashlib.sha256(
         toBeHashed.encode('utf-8')).hexdigest()
 
     signedURL = urlunsplit((splittedURL.scheme, splittedURL.netloc,
-                            splittedURL.path, urlencode(queryObj), ""))
+                            splittedURL.path, urlencode(newQueryObj), ""))
 
     return signedURL
 
