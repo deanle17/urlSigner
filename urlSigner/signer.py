@@ -3,7 +3,7 @@ import hashlib
 import os
 
 
-def _validateSignature(queryObj):
+def _validate_signature(queryObj):
     queriesConcat = ""
     for key, value in queryObj.items():
         if key != "B02K_MAC":
@@ -17,7 +17,7 @@ def _validateSignature(queryObj):
     return False
 
 
-def _processSignedURL(splittedURL, customerName, outputSecret):
+def _process_signed_url(splittedURL, customerName, outputSecret):
     nameArray = customerName.lower().split(" ")
 
     queryObj = {
@@ -50,7 +50,7 @@ def sign(url, encoding="cp1252"):
 
     queryObj["input_secret"] = os.environ["INPUT_SECRET"]
 
-    if not _validateSignature(queryObj):
+    if not _validate_signature(queryObj):
         return "Invalid URL"
 
-    return _processSignedURL(splittedURL, queryObj["B02K_CUSTNAME"], os.environ["OUTPUT_SECRET"])
+    return _process_signed_url(splittedURL, queryObj["B02K_CUSTNAME"], os.environ["OUTPUT_SECRET"])
