@@ -21,6 +21,9 @@ def _validate_signature(queryObj):
 def _process_signed_url(splittedURL, customerName, outputSecret):
     nameArray = customerName.lower().split(" ")
 
+    if len(nameArray) < 2:
+        return "Not enough customer's name information"
+
     newQueryObj = {
         "firstname": nameArray[0].capitalize(),
         "lastname": nameArray[-1].capitalize()

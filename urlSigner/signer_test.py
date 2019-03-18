@@ -14,8 +14,8 @@ class IntegrationTest(unittest.TestCase):
 
         result = signer.sign(urlBase + "B02K_CUSTNAME=V%C4IN%D6%20M%C4KI&B02K_MAC=ebfa16b7dbbf887fd579099d5bbac83488fb34f6c824cc0f8d9d6e2f4d286d41")
 
-        self.assertEqual(
-            result, urlBase + "firstname=V%C3%A4in%C3%B6&lastname=M%C3%A4ki&hash=6e6f22ec29ed8ec1f0be289a94dde36632720596499993b2cdfc1422b834934a")
+        expected = urlBase + "firstname=V%C3%A4in%C3%B6&lastname=M%C3%A4ki&hash=6e6f22ec29ed8ec1f0be289a94dde36632720596499993b2cdfc1422b834934a"
+        self.assertEqual(result, expected)
 
 
 class TestValidateURL(unittest.TestCase):
@@ -55,15 +55,22 @@ class TestProcessSignedURL(unittest.TestCase):
         expectedRes = "http://fsecure.com/?firstname=Lebron&lastname=James&hash=91595c4c920d6624d9a5f738a64b6b81ab316d54a6428db1381a10e8f74a3a21"
         self.assertEqual(result, expectedRes)
 
-    def test_process_URL_middle_name(self):
+    def test_customer_with_middle_name(self):
         """Should process URL sucessfully even when customer has middle name"""
         splittedURL = SplitResult("http", "fsecure.com", "/", "", "")
 
-        result = signer._process_signed_url(
-            splittedURL, "Lebron Goat James", "aaa")
+        result = signer._process_signed_url(splittedURL, "Lebron Goat James", "aaa")
 
         expectedRes = "http://fsecure.com/?firstname=Lebron&lastname=James&hash=91595c4c920d6624d9a5f738a64b6b81ab316d54a6428db1381a10e8f74a3a21"
         self.assertEqual(result, expectedRes)
+
+    def test_customer_missing_name(self):
+        """Should return error message if there is not enough information about customer name"""
+        splittedURL = SplitResult("http", "fsecure.com", "/", "", "")
+
+        result = signer._process_signed_url(splittedURL, "Lebron", "aaa")
+
+        self.assertEqual(result, "Not enough customer's name information")
 
 
 @patch('signer._validate_signature')
@@ -87,18 +94,15 @@ class TestSignURL(unittest.TestCase):
         result = signer.sign(urlBase + "B02K_CUSTNAME=DEAN%20LE&B02K_MAC=xyz")
 
         # Asertion
-        self.assertEqual(
-            result, urlBase + "firstname=Dean&lastname=Le&hash=abc123")
+        self.assertEqual(result, urlBase + "firstname=Dean&lastname=Le&hash=abc123")
 
         self.assertTrue(_validate_signature.called)
         args, _ = _validate_signature.call_args
-        self.assertEqual(
-            args[0], {"B02K_CUSTNAME": "DEAN LE", "B02K_MAC": "xyz", "input_secret": "inputsecret"})
+        self.assertEqual(args[0], {"B02K_CUSTNAME": "DEAN LE", "B02K_MAC": "xyz", "input_secret": "inputsecret"})
 
         self.assertTrue(_process_signed_url.called)
         args, _ = _process_signed_url.call_args
-        self.assertEqual(args[0], SplitResult(
-            "https", "fsecure.com", "/", "B02K_CUSTNAME=DEAN%20LE&B02K_MAC=xyz", ""))
+        self.assertEqual(args[0], SplitResult("https", "fsecure.com", "/", "B02K_CUSTNAME=DEAN%20LE&B02K_MAC=xyz", ""))
         self.assertEqual(args[1], "DEAN LE")
         self.assertEqual(args[2], "outputsecret")
 
@@ -112,23 +116,20 @@ class TestSignURL(unittest.TestCase):
         result = signer.sign(urlBase + "B02K_CUSTNAME=V%C4IN%D6%20M%C4KI&B02K_MAC=xyz")
 
         # Asertion
-        self.assertEqual(
-            result, urlBase + "firstname=V%C3%A4in%C3%B6&lastname=M%C3%A4ki&hash=abc123")
+        self.assertEqual(result, urlBase + "firstname=V%C3%A4in%C3%B6&lastname=M%C3%A4ki&hash=abc123")
 
         args, _ = _validate_signature.call_args
-
-        self.assertEqual(
-            args[0], {"B02K_CUSTNAME": "VÄINÖ MÄKI", "B02K_MAC": "xyz", "input_secret": "inputsecret"})
+        self.assertEqual(args[0], {"B02K_CUSTNAME": "VÄINÖ MÄKI", "B02K_MAC": "xyz", "input_secret": "inputsecret"})
 
         args, _ = _process_signed_url.call_args
-        self.assertEqual(args[0], SplitResult(
-            "https", "fsecure.com", "/", "B02K_CUSTNAME=V%C4IN%D6%20M%C4KI&B02K_MAC=xyz", ""))
+        self.assertEqual(args[0], SplitResult("https", "fsecure.com", "/", "B02K_CUSTNAME=V%C4IN%D6%20M%C4KI&B02K_MAC=xyz", ""))
         self.assertEqual(args[1], "VÄINÖ MÄKI")
         self.assertEqual(args[2], "outputsecret")
 
     def test_signature_missing(self, _process_signed_url, _validate_signature):
         """Should return 'Signature is missing' if there is no signature"""
         result = signer.sign(urlBase + "B02K_CUSTNAME=DEAN%20LE")
+
         self.assertEqual(result, "Signature is missing")
         self.assertFalse(_validate_signature.called)
         self.assertFalse(_process_signed_url.called)
@@ -141,8 +142,7 @@ class TestSignURL(unittest.TestCase):
 
         self.assertEqual(result, "Invalid URL")
         args, _ = _validate_signature.call_args
-        self.assertEqual(
-            args[0], {"B02K_CUSTNAME": "DEAN LE", "B02K_MAC": "xyz", "input_secret": "inputsecret"})
+        self.assertEqual(args[0], {"B02K_CUSTNAME": "DEAN LE", "B02K_MAC": "xyz", "input_secret": "inputsecret"})
 
         self.assertFalse(_process_signed_url.called)
 
